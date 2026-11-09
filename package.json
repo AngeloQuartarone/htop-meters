@@ -2,7 +2,7 @@
   "name": "htop-meters",
   "displayName": "htop Meters",
   "description": "htop's CPU, Mem and Swp meters, in ASCII, in a section of the VS Code side bar.",
-  "version": "0.3.0",
+  "version": "0.1.0",
   "publisher": "angeloquartarone",
   "license": "MIT",
   "repository": {
