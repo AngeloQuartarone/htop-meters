@@ -1,0 +1,116 @@
+{
+  "name": "htop-meters",
+  "displayName": "htop Meters",
+  "description": "htop's CPU, Mem and Swp meters, in ASCII, in a section of the VS Code side bar.",
+  "version": "0.3.0",
+  "publisher": "angeloquartarone",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AngeloQuartarone/htop-meters.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AngeloQuartarone/htop-meters/issues"
+  },
+  "homepage": "https://github.com/AngeloQuartarone/htop-meters#readme",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#1e2127",
+    "theme": "dark"
+  },
+  "private": true,
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Visualization"
+  ],
+  "keywords": [
+    "htop",
+    "cpu",
+    "memory",
+    "ram",
+    "swap",
+    "system monitor",
+    "resource monitor",
+    "performance",
+    "meters",
+    "ascii"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "htopMeters.explorer",
+          "name": "htop"
+        }
+      ],
+      "scm": [
+        {
+          "type": "webview",
+          "id": "htopMeters.scm",
+          "name": "htop"
+        }
+      ],
+      "debug": [
+        {
+          "type": "webview",
+          "id": "htopMeters.debug",
+          "name": "htop"
+        }
+      ],
+      "test": [
+        {
+          "type": "webview",
+          "id": "htopMeters.test",
+          "name": "htop"
+        }
+      ],
+      "claude-sessions-sidebar": [
+        {
+          "type": "webview",
+          "id": "htopMeters.view",
+          "name": "htop",
+          "when": "config.htopMeters.showInClaude && claude-vscode.sessionsListEnabled"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "htop Meters",
+      "properties": {
+        "htopMeters.refreshInterval": {
+          "type": "number",
+          "default": 1500,
+          "minimum": 500,
+          "maximum": 10000,
+          "description": "Time between updates, in milliseconds (htop uses 1500)."
+        },
+        "htopMeters.showInClaude": {
+          "type": "boolean",
+          "default": true,
+          "description": "Also show the htop section under the Claude Code sessions list. Turn it off if a Claude Code update makes it appear twice in the Explorer."
+        },
+        "htopMeters.showTasks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the Tasks line (processes, threads, running). On macOS this runs ps on every update."
+        }
+      }
+    }
+  },
+  "extensionKind": [
+    "workspace"
+  ],
+  "scripts": {
+    "test": "node --check extension.js && node --check media/view.js",
+    "package": "vsce package --no-dependencies",
+    "release": "node scripts/release.mjs"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^4.0.0"
+  }
+}

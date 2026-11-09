@@ -1,0 +1,69 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+body {
+  padding: 4px 12px 8px 20px;
+  box-sizing: border-box;
+}
+
+pre,
+#probe {
+  font-family: var(--vscode-editor-font-family, Menlo, monospace);
+  font-size: var(--vscode-editor-font-size, 12px);
+  font-variant-ligatures: none;
+  line-height: 1.35;
+}
+
+pre {
+  margin: 0;
+  width: 100%;
+  white-space: pre;
+  overflow: hidden;
+  color: var(--vscode-foreground);
+}
+
+#probe {
+  position: absolute;
+  visibility: hidden;
+  white-space: pre;
+}
+
+/* htop's palette, from the theme's terminal colors */
+.lbl {
+  color: var(--vscode-terminal-ansiCyan);
+}
+.br {
+  color: var(--vscode-foreground);
+  font-weight: bold;
+}
+.shadow {
+  color: var(--vscode-terminal-ansiBrightBlack);
+}
+.green {
+  color: var(--vscode-terminal-ansiGreen);
+}
+.blue {
+  color: var(--vscode-terminal-ansiBlue);
+}
+.red {
+  color: var(--vscode-terminal-ansiRed);
+}
+.yellow {
+  color: var(--vscode-terminal-ansiYellow);
+}
+.magenta {
+  color: var(--vscode-terminal-ansiMagenta);
+}
+.val {
+  color: var(--vscode-terminal-ansiBrightCyan);
+  font-weight: bold;
+}
+.run {
+  color: var(--vscode-terminal-ansiBrightGreen);
+  font-weight: bold;
+}

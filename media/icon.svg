@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <rect width="256" height="256" rx="44" fill="#1e2127"/>
+  <g fill="none" stroke="#d7dae0" stroke-width="7" stroke-linecap="square">
+    <path d="M44 52h-10v40h10M212 52h10v40h-10"/>
+    <path d="M44 108h-10v40h10M212 108h10v40h-10"/>
+    <path d="M44 164h-10v40h10M212 164h10v40h-10"/>
+  </g>
+  <g>
+    <!-- CPU: user (green) + kernel (red) -->
+    <g fill="#98c379">
+      <rect x="50" y="58" width="8" height="28"/><rect x="66" y="58" width="8" height="28"/>
+      <rect x="82" y="58" width="8" height="28"/><rect x="98" y="58" width="8" height="28"/>
+      <rect x="114" y="58" width="8" height="28"/>
+    </g>
+    <g fill="#e06c75">
+      <rect x="130" y="58" width="8" height="28"/><rect x="146" y="58" width="8" height="28"/>
+    </g>
+    <!-- Mem: app (green), wired (blue), compressed (magenta), cache (yellow) -->
+    <g fill="#98c379">
+      <rect x="50" y="114" width="8" height="28"/><rect x="66" y="114" width="8" height="28"/>
+      <rect x="82" y="114" width="8" height="28"/>
+    </g>
+    <g fill="#61afef">
+      <rect x="98" y="114" width="8" height="28"/><rect x="114" y="114" width="8" height="28"/>
+    </g>
+    <rect x="130" y="114" width="8" height="28" fill="#c678dd"/>
+    <g fill="#e5c07b">
+      <rect x="146" y="114" width="8" height="28"/><rect x="162" y="114" width="8" height="28"/>
+      <rect x="178" y="114" width="8" height="28"/>
+    </g>
+    <!-- Swp: used (red) -->
+    <g fill="#e06c75">
+      <rect x="50" y="170" width="8" height="28"/><rect x="66" y="170" width="8" height="28"/>
+    </g>
+  </g>
+</svg>
