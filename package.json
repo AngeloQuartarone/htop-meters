@@ -97,7 +97,7 @@
         "htopMeters.showTasks": {
           "type": "boolean",
           "default": true,
-          "description": "Show the Tasks line (processes, threads, running). On macOS this runs ps on every update."
+          "description": "Show the Tasks line (processes, threads, running). On macOS this runs ps on every update; on Windows a PowerShell process stays open while the section is visible."
         }
       }
     }

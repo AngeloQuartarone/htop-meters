@@ -31,7 +31,8 @@ Uptime: 56 days, 06:08:50
 - **Swp**: swap used (`sysctl vm.swapusage` on macOS, `/proc/meminfo` on
   Linux).
 - **Tasks**: processes, threads and running threads (`ps -A -M` on macOS,
-  `/proc` on Linux).
+  `/proc` on Linux, .NET's `Process.GetProcesses()` through PowerShell on
+  Windows, where running threads are those ready or running).
 - **Uptime**: how long the computer has been on.
 
 The colors come from the terminal palette of the active theme, so they
@@ -50,13 +51,16 @@ the copy you can see updates, so having it in several places costs nothing.
 | Setting                       | Default | Description                                                                                                  |
 | ----------------------------- | ------- | ------------------------------------------------------------------------------------------------------------ |
 | `htopMeters.refreshInterval`  | `1500`  | Time between updates, in milliseconds (500–10000; htop uses 1500).                                           |
-| `htopMeters.showTasks`        | `true`  | Show the Tasks line. On macOS it runs `ps` on every update.                                                  |
+| `htopMeters.showTasks`        | `true`  | Show the Tasks line. On macOS it runs `ps` on every update; on Windows it keeps a PowerShell process open.  |
 | `htopMeters.showInClaude`     | `true`  | Also show the section under the Claude Code sessions list. Turn it off if it appears twice in the Explorer. |
 
 ## Platforms
 
-macOS and Linux show every meter. On Windows only CPU, the total memory used
-and Uptime are shown.
+macOS and Linux show every meter. On Windows CPU, the total memory used,
+Tasks and Uptime are shown. For Tasks, a single PowerShell process
+(`powershell.exe`) stays open while the section is visible and answers each
+update in a few tens of milliseconds; it closes 30 seconds after the last
+update, or when VS Code quits.
 
 In a remote window (SSH, WSL, Dev Containers) the extension runs on the
 remote machine, so the meters are the remote machine's.

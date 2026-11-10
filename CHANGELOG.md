@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Tasks on Windows too: processes, threads and running threads, from
+  `Process.GetProcesses()` in a PowerShell process that stays open while the
+  section is visible.
+
 ## 0.1.0 (2026-11-09)
 
 First public release.
