@@ -3,8 +3,9 @@
 const vscode = require('vscode');
 const os = require('os');
 const fs = require('fs');
+const path = require('path');
 const crypto = require('crypto');
-const { execFile } = require('child_process');
+const { execFile, spawn } = require('child_process');
 
 const run = (cmd, args) =>
   new Promise((resolve) => {
@@ -139,6 +140,7 @@ async function swap() {
 async function tasks() {
   if (process.platform === 'linux') return tasksLinux();
   if (process.platform === 'darwin') return tasksDarwin();
+  if (process.platform === 'win32') return winTasks.sample();
   return null;
 }
 
@@ -174,7 +176,135 @@ async function tasksDarwin() {
   return { procs, threads: lines.length, running };
 }
 
+// Windows: neither /proc nor a ps that shows thread states, so the counts come
+// from .NET's Process.GetProcesses(), in PowerShell. PowerShell takes about half
+// a second to start, so one copy stays open and answers each line it reads with
+// "procs threads running" (~30 ms); it exits when its stdin closes, which we do
+// after WIN_IDLE_MS without requests (and which happens anyway if VS Code quits).
+// Running = threads Ready (1), Running (2), Standby (3) or DeferredReady (7),
+// like htop's R state. The System Idle Process (PID 0) is left out: its threads,
+// one per core, are "Running" whenever that core is idle.
+// The script has no double quotes, so it passes safely as a -Command argument
+// (-Command needs no -ExecutionPolicy, unlike a .ps1 file).
+const WIN_TASKS_PS = `
+while ($null -ne [Console]::In.ReadLine()) {
+  $procs = 0; $threads = 0; $running = 0
+  try {
+    foreach ($p in [Diagnostics.Process]::GetProcesses()) {
+      try {
+        if ($p.Id -ne 0) {
+          $ts = $p.Threads
+          $procs++
+          $threads += $ts.Count
+          foreach ($t in $ts) {
+            $s = [int]$t.ThreadState
+            if ($s -eq 1 -or $s -eq 2 -or $s -eq 3 -or $s -eq 7) { $running++ }
+          }
+        }
+      } catch {} finally { $p.Dispose() }
+    }
+    [Console]::Out.WriteLine([string]$procs + ' ' + $threads + ' ' + $running)
+  } catch { [Console]::Out.WriteLine('') }
+}`;
+const WIN_IDLE_MS = 30000; // longer than the longest refresh interval (10 s)
+const WIN_REPLY_MS = 2000;
+
+class WindowsTasks {
+  constructor() {
+    this.ps = null;
+    this.buf = '';
+    this.pending = []; // one resolver per line asked for, in order
+    this.idle = null;
+    this.answered = false; // the current PowerShell has answered at least once
+    this.broken = false; // PowerShell can't run here (missing, blocked): stop trying
+  }
+
+  // Starts PowerShell if it isn't running; also called ahead of the first
+  // sample, so that it starts while the view waits for it.
+  start() {
+    this.touch();
+    if (this.ps || this.broken) return;
+    const root = process.env.SystemRoot || 'C:\\Windows';
+    const exe = path.join(root, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+    let ps;
+    try {
+      ps = spawn(exe, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', WIN_TASKS_PS], {
+        windowsHide: true,
+        stdio: ['pipe', 'pipe', 'ignore'],
+      });
+    } catch {
+      this.broken = true;
+      return;
+    }
+    this.ps = ps;
+    this.buf = '';
+    this.answered = false;
+    ps.stdout.setEncoding('utf8');
+    ps.stdout.on('data', (chunk) => this.read(chunk));
+    ps.stdin.on('error', () => {}); // EPIPE, if it has just exited
+    const gone = () => {
+      if (this.ps !== ps) return;
+      this.ps = null;
+      if (!this.answered) this.broken = true; // it died at start: it would again
+      this.flush();
+    };
+    ps.on('error', gone);
+    ps.on('exit', gone);
+  }
+
+  sample() {
+    this.start();
+    const ps = this.ps;
+    if (!ps) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      // On timeout the resolver stays queued, to take the late line: lines and
+      // requests stay paired.
+      const timer = setTimeout(() => resolve(null), WIN_REPLY_MS);
+      this.pending.push((t) => {
+        clearTimeout(timer);
+        resolve(t);
+      });
+      ps.stdin.write('\n');
+    });
+  }
+
+  read(chunk) {
+    this.buf += chunk;
+    let i;
+    while ((i = this.buf.indexOf('\n')) >= 0) {
+      const m = this.buf.slice(0, i).trim().match(/^(\d+) (\d+) (\d+)$/);
+      this.buf = this.buf.slice(i + 1);
+      this.answered = true;
+      const resolve = this.pending.shift();
+      if (resolve) resolve(m ? { procs: +m[1], threads: +m[2], running: +m[3] } : null);
+    }
+  }
+
+  flush() {
+    for (const resolve of this.pending.splice(0)) resolve(null);
+  }
+
+  touch() {
+    clearTimeout(this.idle);
+    this.idle = setTimeout(() => this.stop(), WIN_IDLE_MS);
+  }
+
+  stop() {
+    clearTimeout(this.idle);
+    this.idle = null;
+    const ps = this.ps;
+    if (!ps) return;
+    this.ps = null;
+    this.flush();
+    ps.stdin.end(); // PowerShell exits when its stdin closes
+  }
+}
+
+const winTasks = new WindowsTasks();
+
 // ---------- view ----------
+
+const showTasks = () => vscode.workspace.getConfiguration('htopMeters').get('showTasks', true);
 
 class HtopViewProvider {
   constructor(extensionUri) {
@@ -209,6 +339,7 @@ class HtopViewProvider {
   start() {
     if (this.timer) return;
     this.prevCpu = cpuTimes();
+    if (process.platform === 'win32' && showTasks()) winTasks.start();
     // a quick first sample, then at the configured pace
     this.timer = setTimeout(() => this.loop(), 300);
   }
@@ -237,8 +368,7 @@ class HtopViewProvider {
       const curr = cpuTimes();
       const cpus = cpuDelta(this.prevCpu || curr, curr);
       this.prevCpu = curr;
-      const showTasks = vscode.workspace.getConfiguration('htopMeters').get('showTasks', true);
-      const [mem, swp, tsk] = await Promise.all([memory(), swap(), showTasks ? tasks() : null]);
+      const [mem, swp, tsk] = await Promise.all([memory(), swap(), showTasks() ? tasks() : null]);
       if (!this.view) return;
       this.view.webview.postMessage({
         type: 'data',
@@ -294,6 +424,7 @@ function activate(context) {
     return p;
   });
   context.subscriptions.push(
+    { dispose: () => winTasks.stop() },
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration('htopMeters')) providers.forEach((p) => p.restart());
     })
